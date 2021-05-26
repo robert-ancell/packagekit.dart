@@ -3,7 +3,7 @@ import 'package:packagekit/packagekit.dart';
 
 void main(List<String> args) async {
   if (args.isEmpty) {
-    print('Need search type, e.g. name');
+    print('Need search type, e.g. name, details, group or file');
     return;
   }
   var type = args[0];
@@ -36,6 +36,15 @@ void main(List<String> args) async {
   switch (type) {
     case 'name':
       await transaction.searchNames(terms);
+      break;
+    case 'details':
+      await transaction.searchDetails(terms);
+      break;
+    case 'group':
+      await transaction.searchGroups(terms);
+      break;
+    case 'file':
+      await transaction.searchFiles(terms);
       break;
     default:
       print('Invalid search type $type');

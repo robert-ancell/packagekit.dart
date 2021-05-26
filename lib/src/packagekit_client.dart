@@ -284,6 +284,8 @@ enum PackageKitRestart {
   securitySystem
 }
 
+enum PackageKitSignatureType { unknown, gpg }
+
 enum PackageKitStatus {
   unknown,
   wait,
@@ -341,6 +343,8 @@ int _encodeTransactionFlags(Set<PackageKitTransactionFlag> flags) {
   return value;
 }
 
+enum PackageKitUpdateState { unknown, stable, unstable, testing }
+
 class PackageKitPackageId {
   final String name;
   final String version;
@@ -391,11 +395,65 @@ class PackageKitUnknownEvent extends PackageKitEvent {
   String toString() => "$runtimeType('$name', $values)";
 }
 
+class PackageKitCategoryEvent extends PackageKitEvent {
+  final String parentId;
+  final String catId;
+  final String name;
+  final String summary;
+  final String icon;
+
+  const PackageKitCategoryEvent(
+      {required this.parentId,
+      required this.catId,
+      required this.name,
+      required this.summary,
+      required this.icon});
+
+  @override
+  String toString() =>
+      "$runtimeType(parentId: '$parentId', catId: '$catId', name: '$name', summary: '$summary', icon: '$icon')";
+}
+
 class PackageKitDestroyEvent extends PackageKitEvent {
   const PackageKitDestroyEvent();
 
   @override
   String toString() => '$runtimeType()';
+}
+
+class PackageKitDetailsEvent extends PackageKitEvent {
+  final Map<String, DBusValue> data;
+
+  String? get description => data.containsKey('description')
+      ? (data['description'] as DBusString).value
+      : null;
+  String? get license => data.containsKey('license')
+      ? (data['license'] as DBusString).value
+      : null;
+  int? get size =>
+      data.containsKey('size') ? (data['size'] as DBusUint64).value : null;
+  String? get summary => data.containsKey('summary')
+      ? (data['summary'] as DBusString).value
+      : null;
+  String? get url =>
+      data.containsKey('url') ? (data['url'] as DBusString).value : null;
+
+  const PackageKitDetailsEvent(this.data);
+
+  @override
+  String toString() => '$runtimeType($data)';
+}
+
+class PackageKitDistroUpgradeEvent extends PackageKitEvent {
+  final PackageKitDistroUpgrade type;
+  final String name;
+  final String summary;
+
+  const PackageKitDistroUpgradeEvent(
+      {required this.type, required this.name, required this.summary});
+  @override
+  String toString() =>
+      "$runtimeType(type: $type, name: '$name', summary: '$summary')";
 }
 
 class PackageKitFilesEvent extends PackageKitEvent {
@@ -429,6 +487,23 @@ class PackageKitErrorCodeEvent extends PackageKitEvent {
 
   @override
   String toString() => "$runtimeType(code: $code, details: '$details')";
+}
+
+class PackageKitEulaRequiredEvent extends PackageKitEvent {
+  final String eulaId;
+  final PackageKitPackageId packageId;
+  final String vendorName;
+  final String licenseAgreement;
+
+  const PackageKitEulaRequiredEvent(
+      {required this.eulaId,
+      required this.packageId,
+      required this.vendorName,
+      required this.licenseAgreement});
+
+  @override
+  String toString() =>
+      "$runtimeType(eulaId: '$eulaId', packageId: '$packageId', vendorName: '$vendorName', licenseAgreement: '$licenseAgreement')";
 }
 
 class PackageKitFinishedEvent extends PackageKitEvent {
@@ -531,6 +606,32 @@ class PackageKitRepositoryDetailEvent extends PackageKitEvent {
       "$runtimeType(repoId: '$repoId', description: '$description', enabled: $enabled)";
 }
 
+class PackageKitRepositorySignatureRequiredEvent extends PackageKitEvent {
+  final PackageKitPackageId packageId;
+  final String repositoryName;
+  final String keyUrl;
+  final String keyUserId;
+  final String keyId;
+  final String keyFingerprint;
+  final String keyTimestamp;
+  final PackageKitSignatureType type;
+
+  const PackageKitRepositorySignatureRequiredEvent({
+    required this.packageId,
+    required this.repositoryName,
+    required this.keyUrl,
+    required this.keyUserId,
+    required this.keyId,
+    required this.keyFingerprint,
+    required this.keyTimestamp,
+    required this.type,
+  });
+
+  @override
+  String toString() =>
+      "$runtimeType(packageId: '$packageId', repositoryName: '$repositoryName', keyUrl: '$keyUrl', keyUserId: '$keyUserId', keyId: '$keyId', keyFingerprint: '$keyFingerprint', keyTimestamp: '$keyTimestamp', type: $type)";
+}
+
 class PackageKitRequireRestartEvent extends PackageKitEvent {
   final PackageKitRestart type;
   final PackageKitPackageId packageId;
@@ -548,6 +649,64 @@ class PackageKitRequireRestartEvent extends PackageKitEvent {
   String toString() => "$runtimeType(type: $type, packageId: '$packageId')";
 }
 
+class PackageKitTransactionEvent extends PackageKitEvent {
+  final DBusObjectPath objectPath;
+  final String timespec;
+  final bool succeeded;
+  final PackageKitRole role;
+  final int duration;
+  final String data;
+  final int uid;
+  final String cmdline;
+
+  const PackageKitTransactionEvent(
+      {required this.objectPath,
+      required this.timespec,
+      required this.succeeded,
+      required this.role,
+      required this.duration,
+      required this.data,
+      required this.uid,
+      required this.cmdline});
+
+  @override
+  String toString() =>
+      "$runtimeType(objectPath: $objectPath, timespec: '$timespec', succeeded: $succeeded, role: $role, duration: $duration, data: '$data', uid: $uid, cmdline: '$cmdline')";
+}
+
+class PackageKitUpdateDetailEvent extends PackageKitEvent {
+  final PackageKitPackageId packageId;
+  final List<String> updates;
+  final List<String> obsoletes;
+  final List<String> vendorUrls;
+  final List<String> bugzillaUrls;
+  final List<String> cveUrls;
+  final PackageKitRestart restart;
+  final String updateText;
+  final String changelog;
+  final PackageKitUpdateState state;
+  final String issued;
+  final String updated;
+
+  const PackageKitUpdateDetailEvent(
+      {required this.packageId,
+      required this.updates,
+      required this.obsoletes,
+      required this.vendorUrls,
+      required this.bugzillaUrls,
+      required this.cveUrls,
+      required this.restart,
+      required this.updateText,
+      required this.changelog,
+      required this.state,
+      required this.issued,
+      required this.updated});
+
+  @override
+  String toString() =>
+      "$runtimeType(packageId: '$packageId', updates: $updates, obsoletes: $obsoletes, vendorUrls: $vendorUrls, bugzillaUrls: $bugzillaUrls, cveUrls: $cveUrls, restart: $restart, updateText: '$updateText', changelog: '$changelog', state: $state, issued: '$issued', updated: '$updated')";
+}
+
 /// A PackageKit transaction.
 class PackageKitTransaction {
   /// Remote transaction object.
@@ -563,11 +722,38 @@ class PackageKitTransaction {
             path: objectPath)
         .map((signal) {
       switch (signal.name) {
+        case 'Category':
+          if (signal.signature != DBusSignature('sssss')) {
+            throw 'Invalid ${signal.name} signal';
+          }
+          return PackageKitCategoryEvent(
+              parentId: (signal.values[0] as DBusString).value,
+              catId: (signal.values[1] as DBusString).value,
+              name: (signal.values[2] as DBusString).value,
+              summary: (signal.values[3] as DBusString).value,
+              icon: (signal.values[4] as DBusString).value);
         case 'Destroy':
           if (signal.signature != DBusSignature('')) {
             throw 'Invalid ${signal.name} signal';
           }
           return PackageKitDestroyEvent();
+        case 'Details':
+          if (signal.signature != DBusSignature('a{sv}')) {
+            throw 'Invalid ${signal.name} signal';
+          }
+          return PackageKitDetailsEvent((signal.values[0] as DBusDict)
+              .children
+              .map((key, value) => MapEntry(
+                  (key as DBusString).value, (value as DBusVariant).value)));
+        case 'DistroUpgrade':
+          if (signal.signature != DBusSignature('uss')) {
+            throw 'Invalid ${signal.name} signal';
+          }
+          return PackageKitDistroUpgradeEvent(
+              type: PackageKitDistroUpgrade
+                  .values[(signal.values[0] as DBusUint32).value],
+              name: (signal.values[1] as DBusString).value,
+              summary: (signal.values[2] as DBusString).value);
         case 'ErrorCode':
           if (signal.signature != DBusSignature('us')) {
             throw 'Invalid ${signal.name} signal';
@@ -576,6 +762,16 @@ class PackageKitTransaction {
               code: PackageKitError
                   .values[(signal.values[0] as DBusUint32).value],
               details: (signal.values[1] as DBusString).value);
+        case 'EulaRequired':
+          if (signal.signature != DBusSignature('ssss')) {
+            throw 'Invalid ${signal.name} signal';
+          }
+          return PackageKitEulaRequiredEvent(
+              eulaId: (signal.values[0] as DBusString).value,
+              packageId: PackageKitPackageId.fromString(
+                  (signal.values[1] as DBusString).value),
+              vendorName: (signal.values[2] as DBusString).value,
+              licenseAgreement: (signal.values[3] as DBusString).value);
         case 'Files':
           if (signal.signature != DBusSignature('sas')) {
             throw 'Invalid ${signal.name} signal';
@@ -632,6 +828,21 @@ class PackageKitTransaction {
               repoId: (signal.values[0] as DBusString).value,
               description: (signal.values[1] as DBusString).value,
               enabled: (signal.values[2] as DBusBoolean).value);
+        case 'RepoSignatureRequired':
+          if (signal.signature != DBusSignature('sssssssu')) {
+            throw 'Invalid ${signal.name} signal';
+          }
+          return PackageKitRepositorySignatureRequiredEvent(
+              packageId: PackageKitPackageId.fromString(
+                  (signal.values[0] as DBusString).value),
+              repositoryName: (signal.values[1] as DBusString).value,
+              keyUrl: (signal.values[2] as DBusString).value,
+              keyUserId: (signal.values[3] as DBusString).value,
+              keyId: (signal.values[4] as DBusString).value,
+              keyFingerprint: (signal.values[5] as DBusString).value,
+              keyTimestamp: (signal.values[6] as DBusString).value,
+              type: PackageKitSignatureType
+                  .values[(signal.values[7] as DBusUint32).value]);
         case 'RequireRestart':
           if (signal.signature != DBusSignature('us')) {
             throw 'Invalid ${signal.name} signal';
@@ -641,10 +852,65 @@ class PackageKitTransaction {
                   .values[(signal.values[0] as DBusUint32).value],
               packageId: PackageKitPackageId.fromString(
                   (signal.values[1] as DBusString).value));
+        case 'Transaction':
+          if (signal.signature != DBusSignature('osbuusus')) {
+            throw 'Invalid ${signal.name} signal';
+          }
+          return PackageKitTransactionEvent(
+              objectPath: signal.values[0] as DBusObjectPath,
+              timespec: (signal.values[1] as DBusString).value,
+              succeeded: (signal.values[2] as DBusBoolean).value,
+              role:
+                  PackageKitRole.values[(signal.values[3] as DBusUint32).value],
+              duration: (signal.values[4] as DBusUint32).value,
+              data: (signal.values[5] as DBusString).value,
+              uid: (signal.values[6] as DBusUint32).value,
+              cmdline: (signal.values[7] as DBusString).value);
+        case 'UpdateDetail':
+          if (signal.signature != DBusSignature('sasasasasasussuss')) {
+            throw 'Invalid ${signal.name} signal';
+          }
+          return PackageKitUpdateDetailEvent(
+              packageId: PackageKitPackageId.fromString(
+                  (signal.values[0] as DBusString).value),
+              updates: (signal.values[1] as DBusArray)
+                  .children
+                  .map((value) => (value as DBusString).value)
+                  .toList(),
+              obsoletes: (signal.values[2] as DBusArray)
+                  .children
+                  .map((value) => (value as DBusString).value)
+                  .toList(),
+              vendorUrls: (signal.values[3] as DBusArray)
+                  .children
+                  .map((value) => (value as DBusString).value)
+                  .toList(),
+              bugzillaUrls: (signal.values[4] as DBusArray)
+                  .children
+                  .map((value) => (value as DBusString).value)
+                  .toList(),
+              cveUrls: (signal.values[5] as DBusArray)
+                  .children
+                  .map((value) => (value as DBusString).value)
+                  .toList(),
+              restart: PackageKitRestart
+                  .values[(signal.values[6] as DBusUint32).value],
+              updateText: (signal.values[7] as DBusString).value,
+              changelog: (signal.values[8] as DBusString).value,
+              state: PackageKitUpdateState
+                  .values[(signal.values[9] as DBusUint32).value],
+              issued: (signal.values[10] as DBusString).value,
+              updated: (signal.values[11] as DBusString).value);
         default:
           return PackageKitUnknownEvent(signal.name, signal.values);
       }
     });
+  }
+
+  Future<void> acceptEula(String eulaId) async {
+    await _object.callMethod(
+        _packageKitTransactionInterfaceName, 'AcceptEula', [DBusString(eulaId)],
+        replySignature: DBusSignature(''));
   }
 
   Future<void> cancel() async {
@@ -677,9 +943,45 @@ class PackageKitTransaction {
         replySignature: DBusSignature(''));
   }
 
+  Future<void> getCategories() async {
+    await _object.callMethod(
+        _packageKitTransactionInterfaceName, 'GetCategories', [],
+        replySignature: DBusSignature(''));
+  }
+
+  Future<void> getDetails(Iterable<PackageKitPackageId> packageIds) async {
+    await _object.callMethod(_packageKitTransactionInterfaceName, 'GetDetails',
+        [DBusArray.string(packageIds.map((id) => id.toString()))],
+        replySignature: DBusSignature(''));
+  }
+
+  Future<void> getDetailsLocal(Iterable<String> files) async {
+    await _object.callMethod(_packageKitTransactionInterfaceName,
+        'GetDetailsLocal', [DBusArray.string(files)],
+        replySignature: DBusSignature(''));
+  }
+
+  Future<void> getDistroUpgrades() async {
+    await _object.callMethod(
+        _packageKitTransactionInterfaceName, 'GetDistroUpgrades', [],
+        replySignature: DBusSignature(''));
+  }
+
   Future<void> getFiles(Iterable<PackageKitPackageId> packageIds) async {
     await _object.callMethod(_packageKitTransactionInterfaceName, 'GetFiles',
         [DBusArray.string(packageIds.map((id) => id.toString()))],
+        replySignature: DBusSignature(''));
+  }
+
+  Future<void> getFilesLocal(Iterable<String> files) async {
+    await _object.callMethod(_packageKitTransactionInterfaceName,
+        'GetFilesLocal', [DBusArray.string(files)],
+        replySignature: DBusSignature(''));
+  }
+
+  Future<void> getOldTransactions(int number) async {
+    await _object.callMethod(_packageKitTransactionInterfaceName,
+        'GetOldTransactions', [DBusUint32(number)],
         replySignature: DBusSignature(''));
   }
 
@@ -696,9 +998,29 @@ class PackageKitTransaction {
         replySignature: DBusSignature(''));
   }
 
+  Future<void> getUpdateDetail(Iterable<PackageKitPackageId> packageIds) async {
+    await _object.callMethod(
+        _packageKitTransactionInterfaceName,
+        'GetUpdateDetail',
+        [DBusArray.string(packageIds.map((id) => id.toString()))],
+        replySignature: DBusSignature(''));
+  }
+
   Future<void> getUpdates({Set<PackageKitFilter> filter = const {}}) async {
     await _object.callMethod(_packageKitTransactionInterfaceName, 'GetUpdates',
         [DBusUint64(_encodeFilters(filter))],
+        replySignature: DBusSignature(''));
+  }
+
+  Future<void> installFiles(Iterable<String> fullPaths,
+      {Set<PackageKitTransactionFlag> transactionFlags = const {}}) async {
+    await _object.callMethod(
+        _packageKitTransactionInterfaceName,
+        'InstallFiles',
+        [
+          DBusUint64(_encodeTransactionFlags(transactionFlags)),
+          DBusArray.string(fullPaths)
+        ],
         replySignature: DBusSignature(''));
   }
 
@@ -710,6 +1032,19 @@ class PackageKitTransaction {
         [
           DBusUint64(_encodeTransactionFlags(transactionFlags)),
           DBusArray.string(packageIds.map((id) => id.toString()))
+        ],
+        replySignature: DBusSignature(''));
+  }
+
+  Future<void> installSignature(
+      int signatureType, String keyId, PackageKitPackageId packageId) async {
+    await _object.callMethod(
+        _packageKitTransactionInterfaceName,
+        'InstallSignature',
+        [
+          DBusUint32(signatureType),
+          DBusString(keyId),
+          DBusString(packageId.toString())
         ],
         replySignature: DBusSignature(''));
   }
@@ -736,6 +1071,53 @@ class PackageKitTransaction {
         replySignature: DBusSignature(''));
   }
 
+  Future<void> repairSystem(
+      {Set<PackageKitTransactionFlag> transactionFlags = const {}}) async {
+    await _object.callMethod(_packageKitTransactionInterfaceName,
+        'RepairSystem', [DBusUint64(_encodeTransactionFlags(transactionFlags))],
+        replySignature: DBusSignature(''));
+  }
+
+  Future<void> repoEnabled(String repoId, bool enabled) async {
+    await _object.callMethod(_packageKitTransactionInterfaceName, 'RepoEnable',
+        [DBusString(repoId), DBusBoolean(enabled)],
+        replySignature: DBusSignature(''));
+  }
+
+  Future<void> repoRemove(String repoId,
+      {Set<PackageKitTransactionFlag> transactionFlags = const {},
+      bool autoremove = false}) async {
+    await _object.callMethod(
+        _packageKitTransactionInterfaceName,
+        'RepoRemove',
+        [
+          DBusUint64(_encodeTransactionFlags(transactionFlags)),
+          DBusString(repoId),
+          DBusBoolean(autoremove)
+        ],
+        replySignature: DBusSignature(''));
+  }
+
+  Future<void> repositorySetData(
+      String repoId, String parameter, String value) async {
+    await _object.callMethod(_packageKitTransactionInterfaceName, 'RepoSetData',
+        [DBusString(repoId), DBusString(parameter), DBusString(value)],
+        replySignature: DBusSignature(''));
+  }
+
+  Future<void> requiredBy(Iterable<PackageKitPackageId> packageIds,
+      {Set<PackageKitFilter> filter = const {}, bool recursive = false}) async {
+    await _object.callMethod(
+        _packageKitTransactionInterfaceName,
+        'RequiredBy',
+        [
+          DBusUint64(_encodeFilters(filter)),
+          DBusArray.string(packageIds.map((id) => id.toString())),
+          DBusBoolean(recursive)
+        ],
+        replySignature: DBusSignature(''));
+  }
+
   Future<void> resolve(Iterable<String> packages,
       {Set<PackageKitTransactionFlag> transactionFlags = const {}}) async {
     await _object.callMethod(
@@ -748,9 +1130,27 @@ class PackageKitTransaction {
         replySignature: DBusSignature(''));
   }
 
+  Future<void> searchDetails(Iterable<String> values,
+      {Set<PackageKitFilter> filter = const {}}) async {
+    await _object.callMethod(
+        _packageKitTransactionInterfaceName,
+        'SearchDetails',
+        [DBusUint64(_encodeFilters(filter)), DBusArray.string(values)],
+        replySignature: DBusSignature(''));
+  }
+
   Future<void> searchFiles(Iterable<String> values,
       {Set<PackageKitFilter> filter = const {}}) async {
     await _object.callMethod(_packageKitTransactionInterfaceName, 'SearchFiles',
+        [DBusUint64(_encodeFilters(filter)), DBusArray.string(values)],
+        replySignature: DBusSignature(''));
+  }
+
+  Future<void> searchGroups(Iterable<String> values,
+      {Set<PackageKitFilter> filter = const {}}) async {
+    await _object.callMethod(
+        _packageKitTransactionInterfaceName,
+        'SearchGroups',
         [DBusUint64(_encodeFilters(filter)), DBusArray.string(values)],
         replySignature: DBusSignature(''));
   }
@@ -791,6 +1191,15 @@ class PackageKitTransaction {
           DBusString(distroId),
           DBusUint32(upgradeKind.index)
         ],
+        replySignature: DBusSignature(''));
+  }
+
+  Future<void> whatProvides(Iterable<String> values,
+      {Set<PackageKitFilter> filter = const {}}) async {
+    await _object.callMethod(
+        _packageKitTransactionInterfaceName,
+        'WhatProvides',
+        [DBusUint64(_encodeFilters(filter)), DBusArray.string(values)],
         replySignature: DBusSignature(''));
   }
 }

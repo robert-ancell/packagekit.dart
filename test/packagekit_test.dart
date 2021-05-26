@@ -43,6 +43,10 @@ class MockPackageKitTransaction extends DBusObject {
     }
 
     switch (methodCall.name) {
+      case 'AcceptEula':
+        return DBusMethodSuccessResponse();
+      case 'Cancel':
+        return DBusMethodSuccessResponse();
       case 'DependsOn':
         var packageIds = (methodCall.values[1] as DBusArray)
             .children
@@ -89,6 +93,18 @@ class MockPackageKitTransaction extends DBusObject {
         }
         emitFinished(ExitSuccess, server.transactionRuntime);
         return DBusMethodSuccessResponse();
+      case 'GetCategories':
+        emitFinished(ExitFailed, server.transactionRuntime);
+        return DBusMethodSuccessResponse();
+      case 'GetDetails':
+        emitFinished(ExitFailed, server.transactionRuntime);
+        return DBusMethodSuccessResponse();
+      case 'GetDetailsLocal':
+        emitFinished(ExitFailed, server.transactionRuntime);
+        return DBusMethodSuccessResponse();
+      case 'GetDistroUpgrades':
+        emitFinished(ExitFailed, server.transactionRuntime);
+        return DBusMethodSuccessResponse();
       case 'GetFiles':
         var packageIds = (methodCall.values[0] as DBusArray)
             .children
@@ -103,6 +119,12 @@ class MockPackageKitTransaction extends DBusObject {
           emitFiles(id, package.fileList);
         }
         emitFinished(ExitSuccess, server.transactionRuntime);
+        return DBusMethodSuccessResponse();
+      case 'GetFilesLocal':
+        emitFinished(ExitFailed, server.transactionRuntime);
+        return DBusMethodSuccessResponse();
+      case 'GetOldTransactions':
+        emitFinished(ExitFailed, server.transactionRuntime);
         return DBusMethodSuccessResponse();
       case 'GetPackages':
         var filter = (methodCall.values[0] as DBusUint64).value;
@@ -127,6 +149,9 @@ class MockPackageKitTransaction extends DBusObject {
         }
         emitFinished(ExitSuccess, server.transactionRuntime);
         return DBusMethodSuccessResponse();
+      case 'GetUpdateDetail':
+        emitFinished(ExitFailed, server.transactionRuntime);
+        return DBusMethodSuccessResponse();
       case 'GetUpdates':
         for (var package in server.installedPackages) {
           for (var source in server.availablePackages.keys) {
@@ -140,6 +165,9 @@ class MockPackageKitTransaction extends DBusObject {
           }
         }
         emitFinished(ExitSuccess, server.transactionRuntime);
+        return DBusMethodSuccessResponse();
+      case 'InstallFiles':
+        emitFinished(ExitFailed, server.transactionRuntime);
         return DBusMethodSuccessResponse();
       case 'InstallPackages':
         var packageIds = (methodCall.values[1] as DBusArray)
@@ -167,6 +195,9 @@ class MockPackageKitTransaction extends DBusObject {
         }
         emitFinished(ExitSuccess, server.transactionRuntime);
         return DBusMethodSuccessResponse();
+      case 'InstallSignature':
+        emitFinished(ExitFailed, server.transactionRuntime);
+        return DBusMethodSuccessResponse();
       case 'RefreshCache':
         for (var repo in server.repositories) {
           emitRepoDetail(repo.id, repo.description, repo.enabled);
@@ -191,6 +222,21 @@ class MockPackageKitTransaction extends DBusObject {
         }
         emitFinished(ExitSuccess, server.transactionRuntime);
         return DBusMethodSuccessResponse();
+      case 'RepairPackages':
+        emitFinished(ExitFailed, server.transactionRuntime);
+        return DBusMethodSuccessResponse();
+      case 'RepoEnable':
+        emitFinished(ExitFailed, server.transactionRuntime);
+        return DBusMethodSuccessResponse();
+      case 'RepoRemove':
+        emitFinished(ExitFailed, server.transactionRuntime);
+        return DBusMethodSuccessResponse();
+      case 'RepoSetData':
+        emitFinished(ExitFailed, server.transactionRuntime);
+        return DBusMethodSuccessResponse();
+      case 'RequiredBy':
+        emitFinished(ExitFailed, server.transactionRuntime);
+        return DBusMethodSuccessResponse();
       case 'Resolve':
         var packageNames = (methodCall.values[1] as DBusArray)
             .children
@@ -204,6 +250,9 @@ class MockPackageKitTransaction extends DBusObject {
           }
         }
         emitFinished(ExitSuccess, server.transactionRuntime);
+        return DBusMethodSuccessResponse();
+      case 'SearchDetails':
+        emitFinished(ExitFailed, server.transactionRuntime);
         return DBusMethodSuccessResponse();
       case 'SearchFiles':
         var values = (methodCall.values[1] as DBusArray)
@@ -228,6 +277,9 @@ class MockPackageKitTransaction extends DBusObject {
           }
         }
         emitFinished(ExitSuccess, server.transactionRuntime);
+        return DBusMethodSuccessResponse();
+      case 'SearchGroups':
+        emitFinished(ExitFailed, server.transactionRuntime);
         return DBusMethodSuccessResponse();
       case 'SearchNames':
         var values = (methodCall.values[1] as DBusArray)
@@ -310,6 +362,9 @@ class MockPackageKitTransaction extends DBusObject {
         emitPackage(InfoFinished, id, summary);
         emitRequireRestart(RestartSystem, id);
         emitFinished(ExitSuccess, server.transactionRuntime);
+        return DBusMethodSuccessResponse();
+      case 'WhatProvides':
+        emitFinished(ExitFailed, server.transactionRuntime);
         return DBusMethodSuccessResponse();
       default:
         return DBusMethodErrorResponse.unknownMethod();
